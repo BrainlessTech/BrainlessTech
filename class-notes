@@ -1,0 +1,4 @@
+nano "file name".md
+git add -A
+git commit -am "add update message"
+git push
