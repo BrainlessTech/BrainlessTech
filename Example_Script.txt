@@ -1,0 +1,38 @@
+--Script to check for duplicate IDs in a given DB.
+
+--Check to see if the table already exists. If so, drop it.
+IF OBJECT ID ('tempdb..#DupeID') IS NOT NULL
+	DROP TABLE #DupeID;
+
+
+--Create a temporary table and insert duplicate IDs into it.
+SELECT COUNT (ID) AS [Count],
+			  ID,
+INTO #DupeID
+FROM "databse suspected of having duplicate entries"
+GROUP BY ID
+HAVING COUNT(ID) >=2
+ORDER BY ID DESC;
+
+DECLARE @Count int = 0
+
+--Loop through temp table and delete all matching IDs in "databse suspected of having duplicate entries"
+WHILE EXISTS (SELECT TOP(1) d.ID FROM #DupeID d ORDER BY d.ID DESC)
+	BEGIN
+		
+		UPDATE "databse suspected of having duplicate entries" SET ID = NULL
+		WHERE ID = (SELECT TOP(1) d.ID FROM #DupeID d ORDER BY d.ID DESC);
+
+		DELETE FROM #DupeID WHERE ID = (SELECT TOP(1) d.ID FROM #DupeID d ORDER BY d.ID DESC);
+
+		SET @Count = @Count +1
+
+		IF EXISTS (SELECT TOP(1) d.ID FROM #DupeID d ORDER BY d.ID DESC)
+			CONTINUE;
+		ELSE
+			BREAK;
+	END
+
+SELECT 'Number of duplicates removed: ' + conert(varchar(200),@count)
+
+DROP TABLE #DupeID;
